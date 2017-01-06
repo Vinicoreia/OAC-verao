@@ -54,32 +54,12 @@ getMatrix:
 	li $t2, 1 # $t2 vai ser o contador J (referente a Coluna)
 	li $t4, 4 # prepara a constante 4 para incrementar o endereço da matriz
 	
+	
+	
 	loop1: # Esse laço controla o input das colunas da matriz.
-		jal promptUser
-		li $v0, 5 # codigo para receber input de inteiro pelo usuario
-		syscall
 		bgt $t2, $t0, resetIncrement
-		addi $t2, $t2, 1
-		j loop1
-	resetIncrement: # Esse laço controla o input das linhas da matriz
-		li $t2, 1
-		addi $t1, $t1, 1
-		bgt $t1, $t0, continue
-		j loop1
-	continue:
-		li $t1, 1
-		lw $ra, 0($sp)
-		addiu $sp, $sp, 4
-		jr $ra
 		
-promptUser:	
-
-	#### Guardando referencia $ra no stackPointer #####
-	addi $sp, $sp, -4
-	sw $ra, 4($sp)
-	#####################################################
-		
-	li $v0, 4
+		li $v0, 4
 	la $a0, promptValorLinha
 	syscall
 	
@@ -98,10 +78,25 @@ promptUser:
 	li $v0, 4
 	la $a0, enter
 	syscall
+		
+		
+		li $v0, 5 # codigo para receber input de inteiro pelo usuario
+		syscall
+		
+		addi $t2, $t2, 1
+		j loop1
+	resetIncrement: # Esse laço controla o input das linhas da matriz
+		li $t2, 1
+		beq $t1, $t0, continue
+		addi $t1, $t1, 1
+		j loop1
+	continue:
+		li $t1, 1
+		j exit
+		
+promptUser:	
+
 	
-	lw $ra, 4($sp)
-	addiu $sp, $sp, 4
-	jr $ra
 		
 exit: 
 	li $v0, 10
