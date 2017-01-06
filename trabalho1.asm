@@ -8,7 +8,7 @@
 .data
 	mensagemInicial: .asciiz "Esse programa realiza soma, multiplicação, calcula o determinante e mostra matrizes inteiras quadradas (sem tratamento de overflow):\n\n"
 	promptValorLinha: .asciiz "\n\nEntre o valor da linha "
-	Coluna: .asciiz " Coluna "
+	coluna: .asciiz " Coluna "
 	barra: .asciiz "|"
 	tab: .asciiz "	"
 	enter: .asciiz "\n"
@@ -40,44 +40,69 @@ main:
 	li $v0, 4
 	syscall
 	
-	jal getMatrixes
+	jal getMatrix
 	j exit
 	
-getMatrixes:
+getMatrix:
+	#### Guardando referencia $ra no stackPointer #####
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)	
+	#####################################################
+	
 	move $t0, $a1 # $t0 vai ser o limitador dos contadores
 	li $t1, 1 # $t1 vai ser o contador I (referente a Linha)
 	li $t2, 1 # $t2 vai ser o contador J (referente a Coluna)
 	li $t4, 4 # prepara a constante 4 para incrementar o endereço da matriz
 	
 	loop1: # Esse laço controla o input das colunas da matriz.
-
-		li $v0, 4
-		la $a0, promptValorLinha
+		jal promptUser
+		li $v0, 5 # codigo para receber input de inteiro pelo usuario
 		syscall
-		
-		li $v0, 1
-		move $a0, $t2
-		syscall
-		
-		li $v0, 5
-		syscall
-				
-		
-		
-		
-		
-		beq $t0, $t2, loop2
+		bgt $t2, $t0, resetIncrement
 		addi $t2, $t2, 1
 		j loop1
-	loop2: # Esse laço controla o input das linhas da matriz
-		li $t2, 0
+	resetIncrement: # Esse laço controla o input das linhas da matriz
+		li $t2, 1
 		addi $t1, $t1, 1
-		beq $t0, $t1, exit
+		bgt $t1, $t0, continue
 		j loop1
+	continue:
+		li $t1, 1
+		lw $ra, 0($sp)
+		addiu $sp, $sp, 4
+		jr $ra
+		
+promptUser:	
 
-somaMatriz:
+	#### Guardando referencia $ra no stackPointer #####
+	addi $sp, $sp, -4
+	sw $ra, 4($sp)
+	#####################################################
+		
+	li $v0, 4
+	la $a0, promptValorLinha
+	syscall
+	
+	li $v0, 1
+	move $a0, $t1
+	syscall
+	
+	li $v0, 4
+	la $a0, coluna
+	syscall
+	
+	li $v0, 1
+	move $a0, $t2
+	syscall
 
-
+	li $v0, 4
+	la $a0, enter
+	syscall
+	
+	lw $ra, 4($sp)
+	addiu $sp, $sp, 4
+	jr $ra
+		
 exit: 
 	li $v0, 10
 	syscall
