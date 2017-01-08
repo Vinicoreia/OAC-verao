@@ -17,12 +17,15 @@
 	matrizD: .space 128 # Espaco na memoria para manter a matriz A
 	matrizS: .space 128 # Espaco na memoria para manter a matriz A
 	matrizT: .space 128 # Espaco na memoria para manter a matriz A	
-	mensagemPedeMatriz1: .asciiz "\n\n Digite a matriz 1 seguindo os passos"
-	mensagemPedeMatriz2: .asciiz "\n\n Digite a matriz 2 seguindo os passos"
-	mensagemMatrizD: .asciiz "\n\nA matriz Destino eh : \n"
+	mensagemPedeMatriz1: .asciiz "\n\nDigite a matriz 1 seguindo os passos\n\n"
+	mensagemPedeMatriz2: .asciiz "\n\nDigite a matriz 2 seguindo os passos\n\n"
+	mensagemResultadoSoma: "\n\nA matriz resultante da soma eh\n\n"
+	mensagemResultadoTransposta: "\n\nA matriz transposta eh:\n\n"
+	mensagemResultadoMultiplicacao: "\n\n A matriz resultante da Multiplicacao eh\n\n"
+	mensagemMatrizD: .asciiz "\n\nA matriz final eh : \n"
 	mensagemMatrizS: .asciiz "\n\nA matriz 1 eh : \n"
 	mensagemMatrizT: .asciiz "\n\nA matriz 2 eh : \n" # Analogia a rs, rt e rd
-	mensagemDimensao: .asciiz "Digite a dimensao n da matriz \n	Ex: caso digite 3 sera criada uma matriz quadrada de 3 linhas e 3 colunas\n\n"
+	mensagemDimensao: .asciiz "\nDigite a dimensao n da matriz \n	Ex: caso digite 3 sera criada uma matriz quadrada de 3 linhas e 3 colunas\n\n"
 .text
 
 main: 
@@ -65,6 +68,35 @@ main:
 	
 	la $a2, matrizT
 	jal print_matrix
+	 #prepara argumentos para a soma das matrizes
+	la $a0, matrizS
+	la $a1, matrizT
+	la $a2, matrizD
+	move $a3, $s0
+	jal soma
+	
+	la $a0, mensagemResultadoSoma
+	li $v0, 4
+	syscall
+	
+	la $a2, matrizD
+	jal print_matrix # escreve na tela a matriz resultante
+	
+	#prepara argumentos para a funcao multiplicacao
+	la $a0, matrizS
+	la $a1, matrizT
+	la $a2, matrizD
+	move $a3, $s0
+	
+	jal multiplicacao
+	
+	
+	la $a0, mensagemResultadoMultiplicacao
+	li $v0, 4
+	syscall
+	
+	la $a2, matrizD
+	jal print_matrix # escreve na tela a matriz resultante
 	
 	
 	j exit
@@ -134,7 +166,6 @@ print_matrix:
 	li $v0, 4
 	syscall
 	
-	
 	print_loop:
 		
 		la $a0, tab
@@ -165,11 +196,12 @@ print_matrix:
 		li $v0, 4
 		syscall
 	
+		beq $t6, $s0, exit_print
+	
 		la $a0, barra
 		li $v0, 4
 		syscall
-	
-		beq $t6, $s0, exit_print
+		
 		li $t7, 0
 		j print_loop
 		
@@ -177,6 +209,44 @@ print_matrix:
 		lw $ra, 0($sp)
 		addi $sp, $sp 8
 		jr $ra
+#################################################################################################
+soma:
+	move $t0, $a0 # matriz 1
+	move $t1, $a1 # matriz 2
+	move $t2, $a2 # matriz Destino
+	move $t3, $a3 # lado
+	li $t7, 0 # contador, como todas as matrizes sao quadradas o contador incrementa lado x lado vezes
+	mul $t3, $t3, $t3
+	loop_soma:
+		
+		lw $t4, 0($t0)
+		lw $t5, 0($t1)
+		
+		add $t6, $t4, $t5 # resultado da soma armazenado em $t6
+		sw $t6, 0($t2)
+		
+		addi $t0, $t0, 4
+		addi $t1, $t1, 4
+		addi $t2, $t2, 4
+		
+		addi $t7, $t7, 1
+		bne $t7, $t3, loop_soma # repete o laco se o contador nao for igual a (lado * lado)
+	jr $ra
+
+#################################################################################################
+multiplicacao:
+	move $t0, $a0 # matriz 1
+	move $t1, $a1 # matriz 2
+	move $t2, $a2 # matriz Destino
+	move $t3, $a3 # lado
+	
+	li $t8, 0 # contador i
+	li $t9, 0 # contador j
+	
+	loop_mult1: 
+	
+	
+	jr $ra
 #################################################################################################
 exit: 
 	li $v0, 10
