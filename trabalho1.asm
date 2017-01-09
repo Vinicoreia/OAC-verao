@@ -238,13 +238,34 @@ multiplicacao:
 	move $t0, $a0 # matriz 1
 	move $t1, $a1 # matriz 2
 	move $t2, $a2 # matriz Destino
-	move $t3, $a3 # lado
 	
+	li $s3, 4 # como nao existe muli precisamos de um registrador pra servir de multiplicador
+	
+	mul $t3, $s0, $s3 #  4 * lado
+	
+	li $t7, 0 # acumulador
 	li $t8, 0 # contador i
 	li $t9, 0 # contador j
 	
-	loop_mult1: 
+	loop_mult1:
+		beq $t9, $s3, loop_mult2
+		lw $t4, 0($t0)
+		lw $t5, 0($t1)
+		
+		mul $t6, $t4, $t5
+		add $t7, $t7, $t6
+		
+		addi $t0, 4
+		add $t1, $t1, $t3
+		addi $t9, $t9, 1
+		j loop_mult1
 	
+	loop_mult2:
+		
+		sw $t7, 0($t2)
+		addi $s2, 4
+		addi $t8, 1
+		
 	
 	jr $ra
 #################################################################################################
