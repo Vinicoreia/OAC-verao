@@ -240,33 +240,36 @@ multiplicacao:
 	move $t2, $a2 # matriz Destino
 	
 	li $s3, 4 # como nao existe muli precisamos de um registrador pra servir de multiplicador
-	
-	mul $t3, $s0, $s3 #  4 * lado
+	mul $t6, $t6, $s3
 	
 	li $t7, 0 # acumulador
 	li $t8, 0 # contador i
 	li $t9, 0 # contador j
-	
-	loop_mult1:
-		beq $t9, $s3, loop_mult2
-		lw $t4, 0($t0)
-		lw $t5, 0($t1)
 		
-		mul $t6, $t4, $t5
-		add $t7, $t7, $t6
+	loop1_mult:
+		beq $t9, $s0, set_variables_mult
 		
-		addi $t0, 4
-		add $t1, $t1, $t3
+		lw $t3, 0($t0)
+		lw $t4, 0($t1)
+		
+		mul $a3, $t3, $t4
+		add $t7, $t7, $a3
+		
 		addi $t9, $t9, 1
-		j loop_mult1
-	
-	loop_mult2:
+		mul $t5, $t9, $s0 # o indice aqui eh j*lado
+		add $t5, $t5, $t8 # j*lado + i
+		mul $t5, $t5, $s3  # para calcular o endereco devemos multiplicar por 4
+		add $t1, $t1, $t5 #somando ao endereco de $t1
+		addi $t0, $t0, 4
+		j loop1_mult
 		
-		sw $t7, 0($t2)
-		addi $s2, 4
-		addi $t8, 1
-		
-	
+	set_variables_mult:
+		sw $t7, 0($t2) #guardando o acumulador na matriz destino
+		addi $t2, $t2, 4
+		addi $t8, $t8, 1
+		move $t0, $a0
+		bne $t8, $s0, loop1_mult
+
 	jr $ra
 #################################################################################################
 exit: 
