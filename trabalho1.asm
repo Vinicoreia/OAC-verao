@@ -245,9 +245,9 @@ multiplicacao:
 	li $t7, 0 # acumulador
 	li $t8, 0 # contador i
 	li $t9, 0 # contador j
-		
+	li $s2, 0 # contador k
 	loop1_mult:
-		beq $t9, $s0, set_variables_mult
+		beq $t9, $s0, set_store
 		
 		lw $t3, 0($t0)
 		lw $t4, 0($t1)
@@ -257,19 +257,24 @@ multiplicacao:
 		
 		addi $t9, $t9, 1
 		mul $t5, $t9, $s0 # o indice aqui eh j*lado
-		add $t5, $t5, $t8 # j*lado + i
+		add $t5, $t5, $s2 # j*lado + k
 		mul $t5, $t5, $s3  # para calcular o endereco devemos multiplicar por 4
 		add $t1, $t1, $t5 #somando ao endereco de $t1
 		addi $t0, $t0, 4
 		j loop1_mult
 		
-	set_variables_mult:
-		sw $t7, 0($t2) #guardando o acumulador na matriz destino
-		addi $t2, $t2, 4
-		addi $t8, $t8, 1
-		move $t0, $a0
+	set_store1:
+		sw $t7, 0($t2) # guardando o acumulador na matriz destino
+		addi $s2, $s2, 1 # deve incrementar o k
+		beq $s2, $s0, controle
+		move $t0, a0
 		bne $t8, $s0, loop1_mult
-
+		
+	controle:
+		mul $s4, $s0, $s3  # lado *4
+		add $t0, $t0, $s4
+		li $s2, 0
+		addi $t8, $t8, 1 # deve incrementar o i
 	jr $ra
 #################################################################################################
 exit: 
