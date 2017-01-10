@@ -73,26 +73,29 @@ main:
 	la $a1, matrizT
 	la $a2, matrizD
 	move $a3, $s0
-	#jal soma
+	jal soma
 	
-	#la $a0, mensagemResultadoSoma
-	#li $v0, 4
-	#syscall
+	la $a0, mensagemResultadoSoma
+	li $v0, 4
+	syscall
 	
-	#la $a2, matrizD
-	#jal print_matrix # escreve na tela a matriz resultante
+	la $a2, matrizD
+	jal print_matrix # escreve na tela a matriz resultante
 	
 	#prepara argumentos para a funcao multiplicacao
-#	la $a0, matrizS
-#	la $a1, matrizT
-#	la $a2, matrizD
+	la $a0, matrizS
+	la $a1, matrizT
+	la $a2, matrizD
 	
-#	jal multiplicacao
+	jal multiplicacao
 	
 	
-#	la $a0, mensagemResultadoMultiplicacao
-#	li $v0, 4
-#	syscall
+	la $a0, mensagemResultadoMultiplicacao
+	li $v0, 4
+	syscall
+	
+	la $a2, matrizD
+	jal print_matrix # escreve na tela a matriz resultante
 	
 	#la $a2, matrizD
 	#jal print_matrix # escreve na tela a matriz resultante
