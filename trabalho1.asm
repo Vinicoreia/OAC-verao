@@ -73,31 +73,43 @@ main:
 	la $a1, matrizT
 	la $a2, matrizD
 	move $a3, $s0
-	jal soma
+	#jal soma
 	
-	la $a0, mensagemResultadoSoma
-	li $v0, 4
-	syscall
+	#la $a0, mensagemResultadoSoma
+	#li $v0, 4
+	#syscall
 	
-	la $a2, matrizD
-	jal print_matrix # escreve na tela a matriz resultante
+	#la $a2, matrizD
+	#jal print_matrix # escreve na tela a matriz resultante
 	
 	#prepara argumentos para a funcao multiplicacao
+#	la $a0, matrizS
+#	la $a1, matrizT
+#	la $a2, matrizD
+	
+#	jal multiplicacao
+	
+	
+#	la $a0, mensagemResultadoMultiplicacao
+#	li $v0, 4
+#	syscall
+	
+	#la $a2, matrizD
+	#jal print_matrix # escreve na tela a matriz resultante
+	
 	la $a0, matrizS
 	la $a1, matrizT
 	la $a2, matrizD
-	move $a3, $s0
 	
-	jal multiplicacao
+	jal transposta
 	
 	
-	la $a0, mensagemResultadoMultiplicacao
+	la $a0, mensagemResultadoTransposta
 	li $v0, 4
 	syscall
 	
 	la $a2, matrizD
 	jal print_matrix # escreve na tela a matriz resultante
-	
 	
 	j exit
 #####################################################################################
@@ -235,47 +247,101 @@ soma:
 
 #################################################################################################
 multiplicacao:
-	move $t0, $a0 # matriz 1
-	move $t1, $a1 # matriz 2
-	move $t2, $a2 # matriz Destino
-	
-	li $s3, 4 # como nao existe muli precisamos de um registrador pra servir de multiplicador
-	mul $t6, $t6, $s3
-	
+		#a[i][j] = a[ i*n + j]#
 	li $t7, 0 # acumulador
 	li $t8, 0 # contador i
 	li $t9, 0 # contador j
 	li $s2, 0 # contador k
-	loop1_mult:
-		beq $t9, $s0, set_store
+
+	loop1_principal:
+	
+		beq $s2, $s0, loop_2
+		mul $t0, $t8, $s0
+		add $t0, $t0, $s2 # indice da matriz1
+		sll $t0, $t0, 2 # multiplicando por 4
 		
-		lw $t3, 0($t0)
-		lw $t4, 0($t1)
+		add $t3, $a0, $t0
+		lw $t2, 0($t3)
 		
-		mul $a3, $t3, $t4
-		add $t7, $t7, $a3
+		mul $t1, $s2, $s0
+		add $t1, $t1, $t9 # indice da matriz1
+		sll $t1, $t1, 2 # multiplicando por 4
 		
+		add $t4, $a1, $t1
+		lw $t1, 0($t4)
+		
+		mul $t3, $t1, $t2
+		add $t7, $t7, $t3 # acumulador
+		#acumula = acumula + matriz1[i][k]*matriz2[k][coluna]
+		li $t0, 0
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		addi $s2, $s2, 1
+		j loop1_principal
+	
+	loop_2:	
+		
+		
+		beq $t9, $s0, loop_3
+		mul $t0, $t8, $s0
+		add $t0, $t0, $t9
+		sll $t0, $t0, 2
+		add $t1, $a2, $t0
+		sw $t7, 0($t1)		
 		addi $t9, $t9, 1
-		mul $t5, $t9, $s0 # o indice aqui eh j*lado
-		add $t5, $t5, $s2 # j*lado + k
-		mul $t5, $t5, $s3  # para calcular o endereco devemos multiplicar por 4
-		add $t1, $t1, $t5 #somando ao endereco de $t1
-		addi $t0, $t0, 4
-		j loop1_mult
-		
-	set_store1:
-		sw $t7, 0($t2) # guardando o acumulador na matriz destino
-		addi $s2, $s2, 1 # deve incrementar o k
-		beq $s2, $s0, controle
-		move $t0, a0
-		bne $t8, $s0, loop1_mult
-		
-	controle:
-		mul $s4, $s0, $s3  # lado *4
-		add $t0, $t0, $s4
+		li $t7, 0
 		li $s2, 0
-		addi $t8, $t8, 1 # deve incrementar o i
+		j loop1_principal
+		
+	loop_3: 
+		
+		li $t7, 0
+		li $s2, 0
+		li $t9, 0
+		addi $t8, $t8, 1 # incrementando
+		bne $t8, $s0, loop1_principal
+
 	jr $ra
+#################################################################################################
+transposta: #a[i][j] = a[ i*n + j]#
+	li $t0, 0 # i
+	li $t1, 0 # j
+	li $t2, 0
+	li $t3, 0
+	loop_transposta:
+		
+		
+		mul $t2, $t0, $s0 # i*n
+		add $t2, $t2, $t1 # indice da matriz1
+		sll $t2, $t2, 2 # multiplicando por 4
+		
+		add $t3, $a0, $t2
+		lw $t4, 0($t3)
+		
+		mul $t2, $t1, $s0 # j*n
+		add $t2, $t2, $t0 # indice da matriz2
+		sll $t2, $t2, 2 # multiplicando por 4
+			
+		add $t3, $a2, $t2
+		sw $t4, 0($t3)		
+		add $t1, $t1, 1
+		li $t2, 0
+		li $t3, 0
+		beq $t1, $s0, loop2_transposta
+		j loop_transposta
+		
+	loop2_transposta:
+		
+		addi $t0, $t0, 1
+		li $t1, 0
+		li $t2, 0
+		li $t3, 0
+		beq $t0, $s0, sair_transposta
+		j loop_transposta
+	sair_transposta:
+		jr $ra
+
 #################################################################################################
 exit: 
 	li $v0, 10
