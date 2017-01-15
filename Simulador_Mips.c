@@ -9,18 +9,12 @@
 #include <stdint.h>
 #include <string.h>
 #define MEM_SIZE 4096
-uint32_t RI;
-uint32_t PC;
+uint32_t RI, PC, immediate26, HI, LO; // HI e LO sao registradores espceiais que nao fazem parte do banco
+                                    // mas como devemos implementar as instrucoes MFHI e MFLO devemos tambem ter esses 2 registradores.
 int32_t mem[MEM_SIZE];
-uint8_t OPcode;
-uint8_t rs;
-uint8_t rt;
-uint8_t rd;
-uint8_t shamt;
-uint8_t funct;
-int16_t imediato16;
-uint32_t imediato26;
 uint32_t Breg[32]; // 32 registradores de 32 bits cada
+uint8_t OPcode, rs, rt, rd, shamt, funct;
+int16_t immediate16;
 
 
 enum OPCODES	{//	lembrem	que soh sao considerados os 6 primeiros bits dessas constantes
@@ -58,28 +52,37 @@ void fetch(){
     PC= PC+4;
 }
 
-void decode(uint32_t instrucao){
-    uint8_t OPcode =  instrucao >> 26;
-    uint8_t rs = (instrucao >> 21)& 0x1F;
-    uint8_t rt = (instrucao >> 16) & 0x1F;
-    uint8_t rd = (instrucao >> 11) & 0x1F;
-    uint8_t shamt = (instrucao >> 6) &0x1F;
-    uint8_t funct = instrucao & 0x2F;
-    int16_t imediato16 = (int16_t)instrucao;
-    uint32_t imediato26 = instrucao & 0x2FFFFFF;
+void decode(uint32_t instruction){
+    uint8_t OPcode =  instruction >> 26;
+    uint8_t rs = (instruction >> 21)& 0x1F;
+    uint8_t rt = (instruction >> 16) & 0x1F;
+    uint8_t rd = (instruction >> 11) & 0x1F;
+    uint8_t shamt = (instruction >> 6) &0x1F;
+    uint8_t funct = instruction & 0x2F;
+    int16_t immediate16 = (int16_t)instruction;
+    uint32_t immediate26 = instruction & 0x2FFFFFF;
 }
 
 void execute(){
     switch(OPcode){
         case ADDI:
+            Breg[rt] = Breg[rs] + Breg[immediate16];
             break;
         case ANDI:
+            Breg[rt] = Breg[rs] & Breg[Immediate16];
             break;
         case BEQ:
+                if(Breg[rt] == Breg[rs]){
+                    PC = PC + immediate16*4
+                }// nao precisa escrever o caso do else pois se não for PC simplesmente incrementa normalmente
             break;
         case BNE:
+             if(Breg[rt] != Breg[rs]){
+                    PC = PC + immediate16*4
+                }// nao precisa escrever o caso do else pois se não for PC simplesmente incrementa normalmente
             break;
         case J:
+            PC = ((PC & F0000000) | (immediate16*4))
             break;
         case JAL:
             break;
@@ -127,7 +130,7 @@ void execute(){
         break;
 
         default:
-            printf("Instrucao nao existe!");
+            printf("Instrucao nao existe nesse simulador!");
             break;
     }
 
@@ -136,7 +139,7 @@ void execute(){
 void run(){
 }
 void step(){
-    if(PC<4000){
+    if(PC<4000{
     fetch();
     decode();
     execute();
