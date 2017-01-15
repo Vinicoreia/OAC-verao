@@ -20,6 +20,7 @@ uint8_t shamt;
 uint8_t funct;
 int16_t imediato16;
 uint32_t imediato26;
+uint32_t Breg[32]; // 32 registradores de 32 bits cada
 
 
 enum OPCODES	{//	lembrem	que soh sao considerados os 6 primeiros bits dessas constantes
