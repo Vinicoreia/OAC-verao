@@ -257,12 +257,12 @@ int load_to_mem(){
 
     if(!text_fp){
         printf("\nerror loading binary file .text\n");
-        return 1;
+        exit(1);
     }
 
     else if(!data_fp){
         printf("\nerror loading binary file .data\n");
-        return 1;
+        exit(1);
     }
     else
     {
