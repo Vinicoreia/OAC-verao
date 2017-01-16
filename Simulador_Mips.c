@@ -49,7 +49,7 @@ enum FUNCT{
 };
 
 void fetch(){
-    RI=mem[PC/4]; // Como nesse simulador incrementamos o PC em 4 (como é feito no MIPS) devemos acessar a memória dividindo seu indice por 4.
+    RI= (uint32_t)mem[PC/4]; // Como nesse simulador incrementamos o PC em 4 (como é feito no MIPS) devemos acessar a memória dividindo seu indice por 4.
     PC= PC+4;
 }
 
@@ -145,6 +145,10 @@ void execute(){
                     Breg[rt] = ((Breg[rt] >> shamt) | (Breg[rt]& 0x80000000)); // Shift right aritmetica srl com extensão de sinal
                     break;
                 case SYSCALL:
+                    if(Breg[2] == 10){
+                    printf("End of Program");
+                    exit(0);
+                    }
                     break;
                 case MFHI:
                     Breg[rd] =  HI;
@@ -156,50 +160,146 @@ void execute(){
         break;
 
         default:
-            printf("Instrucao nao existe nesse simulador!");
+            printf("This is instruction is not implemented here!");
             break;
     }
 
 }
 void run(){
+    while(PC<4096){
+    step();
+    }
 }
 void step(){
-    if(PC<4000){
+    if(PC<4096){
     fetch();
     decode();
     execute();
     }
     else
-        printf("\nFim do programa\n");
+        printf("\nEnd of Program\n");
 
 }
-void dump_mem(){
+void dump_mem(int start, int end, char format){
+
+    int i=0;
+    if(format=='h'){
+        for(i=start; i<=end; i++){
+            printf("%2d \t %08x\n",i, mem[i]);
+        }
+        printf("\n");
+    }
+
+    else if(format == 'd'){
+        for(i=start; i<=end; i++){
+            printf("%2d \t %d\n",i, mem[i]);
+        }
+        printf("\n\n");
+    }
+    else
+        printf("Invalid option");
 }
-void dump_reg(){
+void dump_reg(char format){
+    int i=0;
+    char register_names[32][6] = {"$zero","$at","$v0","$v1","$a0","$a1","$a2","$a3","$t0","$t1","$t2",
+                             "$t3","$t4","$t5","$t6","$t7","$s0","$s1","$s2","$s3","$s4","$s5",
+                             "$s6","$s7","$t8","$t9","$k0","$k1","$gp","$sp","$fp","$ra"};
+    if(format=='h'){
+        for(i=0; i<32; i++){
+            printf("%d:\t%s: %08x\n",i,register_names[i], Breg[i]);
+            }
+        printf("PC: %08x\n",PC);
+        printf("HI: %08x\n",HI);
+        printf("LO: %08x\n",LO);
+    }else if (format == 'd'){
+        for(i=0; i<32; i++){
+            printf("%d:\t%s: %d\n",i,register_names[i], Breg[i]);
+            }
+        printf("PC: %d\n",PC);
+        printf("HI: %d\n",HI);
+        printf("LO: %d\n",LO);
+    }
+     else
+        printf("Invalid option");
+
 }
-int load_mem(){
+
+int load_to_mem(){
     FILE *text_fp;
+    int i;
+    uint32_t instrucao;
     FILE *data_fp;
-
+    unsigned char str[4];
+    uint8_t c1, c2, c3, c4;
     text_fp = fopen("text.bin", "rb");
     data_fp = fopen("data.bin", "rb");
 
-    if(text_fp == NULL || data_fp == NULL){
-        printf("\nerro ao carregar arquivos.\n");
+    if(!text_fp){
+        printf("\nerror loading binary file .text\n");
+        return 1;
+    }
+
+    else if(!data_fp){
+        printf("\nerror loading binary file .data\n");
         return 1;
     }
     else
     {
-    //FAZ A LEITURA
+        i=0;
+        //FAZ A LEITURA
+        while(!feof(text_fp)){//Ver como isso funciona direito
+            instrucao = 0;
+            instrucao |= getc(text_fp);
+            instrucao |= getc(text_fp) << 8;
+            instrucao |= getc(text_fp) << 16;
+            instrucao |= getc(text_fp) << 24;
+            mem[i] = instrucao;
+            i++;
+        }
+            i=0;
+       while(!feof(data_fp)){
+            instrucao = 0;
+            instrucao |= getc(data_fp);
+            instrucao |= getc(data_fp) << 8;
+            instrucao |= getc(data_fp) << 16;
+            instrucao |= getc(data_fp) << 24;
+            mem[2048+i] = instrucao;
+            i++;
+        }
+   }
+    fclose(text_fp);
+    fclose(data_fp);
     }
-
-}
 void start(){
 // ESSA FUNCAO EH RESPONSAVEL POR EXIBIR O MENU DE FUNCOES E
 // COMECAR O PROGRAMA CHAMANDO load_mem .
+    load_to_mem();
+    int opcao;
+    printf("\nWich function would you like to execute?\n\n");
+
+    printf("1- Run Program\n2- Run Step.\n3- Dump Memory\n4- Dump register values\n\n");
+    switch(opcao){
+        case 1:
+            run();
+            break;
+        case 2:
+            step();
+            break;
+        case 3://dump_mem
+            break;
+        case 4:
+            dump_reg('h');
+            break;
+        default:
+            printf("invalid operation!");
+            break;
+    }
 }
 
 int main (){
+    load_to_mem();
+    dump_mem(0,10,'g');
+   // start();
 
 return 0;
 }
