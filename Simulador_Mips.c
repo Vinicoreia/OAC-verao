@@ -60,7 +60,6 @@ int32_t sign_extend(uint16_t immediate){
 
 void fetch(){
     RI= (uint32_t)mem[PC/4]; // Como nesse simulador incrementamos o PC em 4 (como é feito no MIPS) devemos acessar a memória dividindo seu indice por 4.
-    printf("PC %d\n", PC);
     PC= PC+4;
 }
 
@@ -73,10 +72,6 @@ void decode(){
     funct = RI & 0x3F;
     immediate16 = (int16_t)RI;
     immediate26 = RI & 0x2FFFFFF;
-
-    printf("OPCODE %x\n", OPcode);
-    printf("funct %x\n", funct);
-
 }
 
 void execute(){
@@ -149,7 +144,6 @@ void execute(){
                     Breg[rd] = ~(Breg[rs] | Breg[rt]);
                     break;
                 case SLT:
-                    printf("%x, %x, %d, %d", rs, rt, Breg[rs], Breg[rt]);
                     if (Breg[rt] > Breg[rs]){
                         Breg[rd] = 0;
                         }
@@ -273,8 +267,8 @@ int load_to_mem(){
     else
     {
         i=0;
-        //FAZ A LEITURA
-        while(!feof(text_fp)){//Ver como isso funciona direito
+        //FAZ A LEITURA DO BINARIO
+        while(!feof(text_fp)){
             instrucao = 0;
             instrucao |= getc(text_fp);
             instrucao |= getc(text_fp) << 8;
