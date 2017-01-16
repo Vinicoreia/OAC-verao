@@ -15,6 +15,8 @@ int32_t mem[MEM_SIZE];
 uint32_t Breg[32]; // 32 registradores de 32 bits cada
 uint8_t OPcode, rs, rt, rd, shamt, funct;
 int16_t immediate16;
+uint32_t posicao;
+uint64_t aux_hi;
 
 
 enum OPCODES	{//	lembrem	que soh sao considerados os 6 primeiros bits dessas constantes
@@ -48,8 +50,17 @@ enum FUNCT{
     SRA=0x03,
 };
 
+int32_t sign_extend(uint16_t immediate){
+    immediate = immediate & 0x0000FFFF;
+        if(immediate & 0x0000FFFF){
+            immediate +=0xFFFF0000;
+        }
+    return immediate;
+}
+
 void fetch(){
     RI= (uint32_t)mem[PC/4]; // Como nesse simulador incrementamos o PC em 4 (como é feito no MIPS) devemos acessar a memória dividindo seu indice por 4.
+    printf("PC %d\n", PC);
     PC= PC+4;
 }
 
@@ -59,51 +70,58 @@ void decode(){
     rt = (RI >> 16) & 0x1F;
     rd = (RI >> 11) & 0x1F;
     shamt = (RI >> 6) &0x1F;
-    funct = RI & 0x2F;
+    funct = RI & 0x3F;
     immediate16 = (int16_t)RI;
     immediate26 = RI & 0x2FFFFFF;
-    printf("Opcode %x\n", OPcode);
+
+    printf("OPCODE %x\n", OPcode);
+    printf("funct %x\n", funct);
 
 }
 
 void execute(){
-    printf("Opcode %x\n", OPcode);
     switch(OPcode){
-        case ADDI:
-        printf("aqui\n");
-            Breg[rt] = Breg[rs] + Breg[immediate16];
+
+        case ADDI: // sign-extended
+            immediate16 = sign_extend(immediate16);
+            Breg[rt] = Breg[rs] + immediate16;
+
             break;
-        case ANDI:
-            Breg[rt] = Breg[rs] & Breg[immediate16];
+        case ANDI: // zero-extended
+            Breg[rt] = Breg[rs] & (immediate16 & 0x0000FFFF);
             break;
-        case BEQ:
+        case BEQ:// sign-extended
+               immediate16 = sign_extend(immediate16);
                 if(Breg[rt] == Breg[rs]){
-                    PC = PC + immediate16*4;
+                    PC = PC + (immediate16 << 2);
                 }// nao precisa escrever o caso do else pois se não for PC simplesmente incrementa normalmente
             break;
         case BNE:
+               immediate16 = sign_extend(immediate16);
              if(Breg[rt] != Breg[rs]){
-                    PC = PC + immediate16*4;
+                    PC = PC + (immediate16 << 2);
                 }// nao precisa escrever o caso do else pois se não for PC simplesmente incrementa normalmente
             break;
         case J:
-            PC = ((PC & 0xF0000000) | (immediate26*4)); // a label é defininda no imediato de 26 bits
+            PC = ((PC & 0xF0000000) | (immediate26<<2)); // a label é defininda no imediato de 26 bits
             break;
         case JAL:
-            Breg[31] = PC + 4; // $ra recebe o endereco da proxima instrucao
-            PC = ((PC & 0xF0000000) | (immediate26*4));
+            Breg[31] = PC; // $ra recebe o endereco da proxima instrucao
+            PC = ((PC & 0xF0000000) | (immediate26<<2));
             break;
         case LW:
-            Breg[rt] = mem[(Breg[rs] + immediate16)/4]; // o endereco de acesso é dado pelo valor em RS + offset dado pelo imediato.
+            posicao = (Breg[rs] + ((int32_t)(immediate16 & 0x0000FFFF)))/4;
+            Breg[rt] = mem[(Breg[rs] + ((int32_t)(immediate16 & 0x0000FFFF)))/4]; // o endereco de acesso é dado pelo valor em RS + offset dado pelo imediato.
             break;
-        case ORI:
-            Breg[rt] = (Breg[rs] | immediate16);
+        case ORI: // zero-extended
+            Breg[rt] = (Breg[rs] | ((int32_t)(immediate16 & 0x0000FFFF)));
             break;
         case SW:
-            mem[(Breg[rt] + immediate16)/4] = Breg[rs];
+            posicao = (Breg[rs] + (((int32_t)(immediate16 & 0x0000FFFF))))/4;
+            mem[posicao] = Breg[rt];
             break;
         case LUI:
-            Breg[rs] = immediate16 << 16;
+            Breg[rt] = (immediate16 & 0x0000FFFF) << 16;
             break;
         case EXT:// Caso opcode = 0 então a instrucao eh do tipo R
             switch(funct){
@@ -114,7 +132,9 @@ void execute(){
                     Breg[rd] = Breg[rs] - Breg[rt];
                     break;
                 case MULT:
-                    LO = Breg[rs] * Breg[rt];
+                    aux_hi = (int64_t)((int64_t)Breg[rs] * (int64_t)Breg[rt])>>32;
+                    HI = (uint32_t)(aux_hi);
+                    LO = (Breg[rs] * Breg[rt]);
                     break;
                 case AND:
                     Breg[rd] = Breg[rs] & Breg[rt];
@@ -129,24 +149,25 @@ void execute(){
                     Breg[rd] = ~(Breg[rs] | Breg[rt]);
                     break;
                 case SLT:
-                    if (Breg[rs] < Breg[rt]){
-                        Breg[rd] = 1;
+                    printf("%x, %x, %d, %d", rs, rt, Breg[rs], Breg[rt]);
+                    if (Breg[rt] > Breg[rs]){
+                        Breg[rd] = 0;
                         }
                     else{
-                        Breg[rd] = 0;
+                        Breg[rd] = 1;
                     }
                     break;
                 case JR:
                     PC = Breg[31];
                     break;
                 case SLL:
-                    Breg[rd] = Breg[rs] << shamt;
+                    Breg[rd] = Breg[rt] << shamt;
                     break;
                 case SRL:
-                    Breg[rd] = Breg[rs] >> shamt;
+                    Breg[rd] = Breg[rt] >> shamt;
                     break;
-                case SRA:
-                    Breg[rt] = ((Breg[rt] >> shamt) | (Breg[rt]& 0x80000000)); // Shift right aritmetica srl com extensão de sinal
+                case SRA://Sign-extended
+                    Breg[rd] = (int8_t)(Breg[rt] >> shamt); // Shift right aritmetic SRA com extensão de sinal
                     break;
                 case SYSCALL:
                     if(Breg[2] == 10){
@@ -160,6 +181,9 @@ void execute(){
                 case MFLO:
                     Breg[rd] =  LO;
                     break;
+                default:
+                    printf("This instruction is not implemented here!");
+                break;
             }
             break;
         default:
@@ -170,6 +194,7 @@ void execute(){
 }
 void step(){
     if(PC<4096){
+
     fetch();
     decode();
     execute();
@@ -276,33 +301,66 @@ void start(){
 // ESSA FUNCAO EH RESPONSAVEL POR EXIBIR O MENU DE FUNCOES E
 // COMECAR O PROGRAMA CHAMANDO load_mem .
     load_to_mem();
-    int opcao;
-    printf("\nWich function would you like to execute?\n\n");
+    int start_point, end_point;
+    char c;
 
-    printf("1- Run Program\n2- Run Step.\n3- Dump Memory\n4- Dump register values\n\n");
-    switch(opcao){
-        case 1:
-            run();
-            break;
-        case 2:
-            step();
-            break;
-        case 3://dump_mem
-            break;
-        case 4:
-            dump_reg('h');
-            break;
-        default:
-            printf("invalid operation!");
-            break;
-    }
+    int opcao;
+    do{
+        printf("\nWich function would you like to execute?\n\n");
+        printf("1- Run Program\n2- Run Step.\n3- Dump Memory\n4- Dump register values\n5- Quit\n");
+        scanf("%d", &opcao);
+        getchar();
+        switch(opcao){
+            case 1:
+                run();
+                break;
+            case 2:
+                step();
+                break;
+            case 3:
+                printf("enter the starting point");
+                scanf("%d", &start_point);
+                getchar();
+
+                printf("Enter the ending point");
+                scanf("%d", &end_point);
+                getchar();
+
+                printf("\n\nEnter the format (\'h\') for hex and (\'d\') for decimal\n\n");
+
+                c=getc(stdin);
+
+                if(c!='h' && c!='d'){
+                    printf("opcao inexistente");
+                }
+                else{
+                    dump_mem(start_point, end_point, c);
+                }
+                printf("\n\n\n");
+                break;
+            case 4:
+                printf("\n\nEnter the format (\'h\') for hex and (\'d\') for decimal\n\n");
+                c=getc(stdin);
+                if(c!='h' && c!='d'){
+                    printf("opcao inexistente");
+                }
+                else{
+                    dump_reg(c);
+                }
+                printf("\n\n\n");
+                break;
+                break;
+            case 5:
+                printf("\n\nEnd of Program\n\n");
+                exit(0);
+            default:
+                printf("invalid operation!");
+                break;
+        }
+    }while(1);
 }
 
 int main (){
-    load_to_mem();
-    dump_mem(0,30,'h');
-    step();
-   // start();
-
+   start();
 return 0;
 }
