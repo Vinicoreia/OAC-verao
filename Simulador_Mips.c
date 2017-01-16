@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #define MEM_SIZE 4096
-uint32_t RI, PC, immediate26, HI, LO; // HI e LO sao registradores espceiais que nao fazem parte do banco
+uint32_t RI, PC, immediate26, HI, LO; // HI e LO sao registradores especiais que nao fazem parte do banco
                                     // mas como devemos implementar as instrucoes MFHI e MFLO devemos tambem ter esses 2 registradores.
 int32_t mem[MEM_SIZE];
 uint32_t Breg[32]; // 32 registradores de 32 bits cada
@@ -54,19 +54,23 @@ void fetch(){
 }
 
 void decode(){
-    uint8_t OPcode =  RI >> 26;
-    uint8_t rs = (RI >> 21)& 0x1F;
-    uint8_t rt = (RI >> 16) & 0x1F;
-    uint8_t rd = (RI >> 11) & 0x1F;
-    uint8_t shamt = (RI >> 6) &0x1F;
-    uint8_t funct = RI & 0x2F;
-    int16_t immediate16 = (int16_t)RI;
-    uint32_t immediate26 = RI & 0x2FFFFFF;
+    OPcode =  RI >> 26;
+    rs = (RI >> 21)& 0x1F;
+    rt = (RI >> 16) & 0x1F;
+    rd = (RI >> 11) & 0x1F;
+    shamt = (RI >> 6) &0x1F;
+    funct = RI & 0x2F;
+    immediate16 = (int16_t)RI;
+    immediate26 = RI & 0x2FFFFFF;
+    printf("Opcode %x\n", OPcode);
+
 }
 
 void execute(){
+    printf("Opcode %x\n", OPcode);
     switch(OPcode){
         case ADDI:
+        printf("aqui\n");
             Breg[rt] = Breg[rs] + Breg[immediate16];
             break;
         case ANDI:
@@ -157,18 +161,12 @@ void execute(){
                     Breg[rd] =  LO;
                     break;
             }
-        break;
-
+            break;
         default:
-            printf("This is instruction is not implemented here!");
+            printf("This instruction is not implemented here!");
             break;
     }
 
-}
-void run(){
-    while(PC<4096){
-    step();
-    }
 }
 void step(){
     if(PC<4096){
@@ -180,6 +178,12 @@ void step(){
         printf("\nEnd of Program\n");
 
 }
+void run(){
+    while(PC<4096){
+    step();
+    }
+}
+
 void dump_mem(int start, int end, char format){
 
     int i=0;
@@ -229,8 +233,6 @@ int load_to_mem(){
     int i;
     uint32_t instrucao;
     FILE *data_fp;
-    unsigned char str[4];
-    uint8_t c1, c2, c3, c4;
     text_fp = fopen("text.bin", "rb");
     data_fp = fopen("data.bin", "rb");
 
@@ -298,7 +300,8 @@ void start(){
 
 int main (){
     load_to_mem();
-    dump_mem(0,10,'g');
+    dump_mem(0,30,'h');
+    step();
    // start();
 
 return 0;
