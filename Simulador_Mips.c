@@ -290,6 +290,7 @@ int load_to_mem(){
    }
     fclose(text_fp);
     fclose(data_fp);
+    return 0;
     }
 void start(){
 // ESSA FUNCAO EH RESPONSAVEL POR EXIBIR O MENU DE FUNCOES E
