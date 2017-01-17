@@ -301,7 +301,7 @@ void start(){
 
     int opcao;
     do{
-        printf("\nWich function would you like to execute?\n\n");
+        printf("\nWhich function would you like to execute?\n\n");
         printf("1- Run Program\n2- Run Step.\n3- Dump Memory\n4- Dump register values\n5- Quit\n");
         scanf("%d", &opcao);
         getchar();
